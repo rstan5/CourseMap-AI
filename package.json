@@ -1,0 +1,47 @@
+{
+  "name": "coursemap",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test:e2e": "node scripts/e2e-flow.mjs http://localhost:3000 && node scripts/e2e-anonymous.mjs http://localhost:3000 && node scripts/e2e-full-flow.mjs http://localhost:3000"
+  },
+  "dependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.4",
+    "@radix-ui/react-slot": "^1.2.0",
+    "@xyflow/react": "^12.10.2",
+    "bcryptjs": "^3.0.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dagre": "^0.8.5",
+    "jose": "^6.2.3",
+    "lucide-react": "^0.511.0",
+    "mammoth": "^1.9.0",
+    "next": "^15.3.3",
+    "officeparser": "^5.1.1",
+    "openai": "^4.104.0",
+    "pdf-parse": "^1.1.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "stripe": "^22.1.1",
+    "tailwind-merge": "^3.3.0",
+    "zod": "^3.25.28"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.7",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/dagre": "^0.7.54",
+    "@types/node": "^22.15.21",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
+    "eslint": "^9.27.0",
+    "eslint-config-next": "^15.3.3",
+    "tailwindcss": "^4.1.7",
+    "typescript": "^5.8.3"
+  }
+}
