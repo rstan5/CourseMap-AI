@@ -1,6 +1,8 @@
 /**
  * Full product flow: anonymous generate → signup migrate → view → second map paywall
  */
+import { mergeSetCookies } from "./e2e-cookies.mjs";
+
 const BASE =
   process.argv[2] ?? process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const SAMPLE =
@@ -23,19 +25,9 @@ async function req(method, path, body) {
     body:
       body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
   });
-  for (const c of res.headers.getSetCookie?.() ?? []) {
-    const [pair] = c.split(";");
-    const [k, v] = pair.split("=");
-    const jar = Object.fromEntries(
-      cookies
-        .split("; ")
-        .filter(Boolean)
-        .map((p) => p.split("="))
-    );
-    jar[k] = v;
-    cookies = Object.entries(jar)
-      .map(([k2, v2]) => `${k2}=${v2}`)
-      .join("; ");
+  const setCookie = res.headers.getSetCookie?.() ?? [];
+  if (setCookie.length) {
+    cookies = mergeSetCookies(cookies, setCookie);
   }
   const text = await res.text();
   return { res, json: text ? JSON.parse(text) : {} };

@@ -6,6 +6,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
+import { mergeSetCookies } from "./e2e-cookies.mjs";
 
 const BASE =
   process.argv[2] ?? process.env.E2E_BASE_URL ?? "http://localhost:3000";
@@ -60,20 +61,7 @@ async function request(method, pathname, body) {
 
   const setCookie = res.headers.getSetCookie?.() ?? [];
   if (setCookie.length) {
-    const pairs = setCookie.map((c) => c.split(";")[0]);
-    const jar = Object.fromEntries(
-      cookies
-        .split("; ")
-        .filter(Boolean)
-        .map((p) => p.split("="))
-    );
-    for (const pair of pairs) {
-      const [k, v] = pair.split("=");
-      jar[k] = v;
-    }
-    cookies = Object.entries(jar)
-      .map(([k, v]) => `${k}=${v}`)
-      .join("; ");
+    cookies = mergeSetCookies(cookies, setCookie);
   }
 
   const text = await res.text();

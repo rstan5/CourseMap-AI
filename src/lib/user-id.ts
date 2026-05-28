@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { randomUUID } from "crypto";
+import { getCookieDomain } from "@/lib/cookie-domain";
 
 export const USER_ID_COOKIE = "cm_uid";
 
@@ -15,6 +16,7 @@ export async function getOrCreateUserId(): Promise<string> {
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
+    domain: getCookieDomain(),
   });
   return userId;
 }

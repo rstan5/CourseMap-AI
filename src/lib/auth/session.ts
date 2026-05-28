@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { findUserById, toAuthUser } from "@/lib/auth/users";
+import { getCookieDomain } from "@/lib/cookie-domain";
 import type { AuthUser } from "@/types/auth";
 
 export const SESSION_COOKIE = "cm_session";
@@ -30,12 +31,13 @@ export async function createSession(userId: string): Promise<void> {
     sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE,
+    domain: getCookieDomain(),
   });
 }
 
 export async function destroySession(): Promise<void> {
   const jar = await cookies();
-  jar.delete(SESSION_COOKIE);
+  jar.delete({ name: SESSION_COOKIE, domain: getCookieDomain() });
 }
 
 export async function getSessionUserId(): Promise<string | null> {
