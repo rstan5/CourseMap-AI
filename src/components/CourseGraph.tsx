@@ -24,24 +24,50 @@ import {
   type CourseEdgeData,
   type CourseNodeData,
 } from "@/lib/graphLayout";
-import type { ConceptMapModule } from "@/types/course";
+import type { ConceptMapModule, LearningGraphEdge } from "@/types/course";
 
 const nodeTypes = { courseNode: CourseNode };
 
 function styleEdges(rawEdges: Edge<CourseEdgeData>[]): Edge<CourseEdgeData>[] {
   return rawEdges.map((edge) => {
     const edgeType = edge.data?.edgeType ?? "connects";
-    const color = edgeType === "prerequisite" ? "#8b9cf8" : "#c4cff9";
+
+    if (edgeType === "prerequisite") {
+      const color = "#8b9cf8";
+      return {
+        ...edge,
+        style: { stroke: color, strokeWidth: 2.5 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 18,
+          height: 18,
+          color,
+        },
+      };
+    }
+
+    if (edgeType === "builds_on") {
+      const color = "#9a7dff";
+      return {
+        ...edge,
+        style: { stroke: color, strokeWidth: 2 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 16,
+          height: 16,
+          color,
+        },
+      };
+    }
+
+    const color = "#c4cff9";
     return {
       ...edge,
-      style:
-        edgeType === "prerequisite"
-          ? { stroke: color, strokeWidth: 2.5 }
-          : { stroke: color, strokeWidth: 1.5, strokeDasharray: "8 6" },
+      style: { stroke: color, strokeWidth: 1.5, strokeDasharray: "8 6" },
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        width: 18,
-        height: 18,
+        width: 16,
+        height: 16,
         color,
       },
     };
@@ -50,6 +76,7 @@ function styleEdges(rawEdges: Edge<CourseEdgeData>[]): Edge<CourseEdgeData>[] {
 
 interface CourseGraphInnerProps {
   conceptMap: ConceptMapModule[];
+  learningGraphEdges?: LearningGraphEdge[];
   className?: string;
   height?: string;
   previewMode?: boolean;
@@ -57,6 +84,7 @@ interface CourseGraphInnerProps {
 
 function CourseGraphInner({
   conceptMap,
+  learningGraphEdges = [],
   className,
   height = "min-h-[70vh]",
   previewMode = false,
@@ -66,7 +94,10 @@ function CourseGraphInner({
   );
   const { fitView } = useReactFlow();
 
-  const prepared = useMemo(() => prepareGraph(conceptMap), [conceptMap]);
+  const prepared = useMemo(
+    () => prepareGraph(conceptMap, learningGraphEdges),
+    [conceptMap, learningGraphEdges]
+  );
   const styledEdges = useMemo(
     () => styleEdges(prepared.edges),
     [prepared.edges]
@@ -86,7 +117,10 @@ function CourseGraphInner({
     setSelectedModule({
       id: data.id,
       module: data.module,
-      description: data.description,
+      detailed_description: data.detailed_description,
+      what_this_really_covers: data.what_this_really_covers,
+      why_it_matters: data.why_it_matters,
+      common_student_confusions: data.common_student_confusions ?? [],
       learning_points: data.learning_points ?? [],
       exam_priority_note: data.exam_priority_note ?? "",
       importance: data.importance,
@@ -173,14 +207,18 @@ function CourseGraphInner({
         />
       )}
 
-      <div className="glass-pill pointer-events-none absolute bottom-4 left-4 z-10 flex flex-wrap gap-4 rounded-2xl px-4 py-2.5 text-xs font-bold text-muted-foreground">
+      <div className="glass-pill pointer-events-none absolute bottom-4 left-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap gap-3 rounded-2xl px-4 py-2.5 text-xs font-bold text-muted-foreground">
         <span className="flex items-center gap-2">
-          <span className="h-0.5 w-6 rounded bg-primary" />
+          <span className="h-0.5 w-6 rounded bg-[#8b9cf8]" />
           Prerequisite
         </span>
         <span className="flex items-center gap-2">
+          <span className="h-0.5 w-6 rounded bg-[#9a7dff]" />
+          Builds on
+        </span>
+        <span className="flex items-center gap-2">
           <span className="h-0.5 w-6 rounded border-t-2 border-dashed border-primary/50" />
-          Connects to
+          Related
         </span>
       </div>
     </div>
@@ -189,6 +227,7 @@ function CourseGraphInner({
 
 interface CourseGraphProps {
   conceptMap: ConceptMapModule[];
+  learningGraphEdges?: LearningGraphEdge[];
   className?: string;
   height?: string;
   /** Landing page: static visual, no slide-over panel */

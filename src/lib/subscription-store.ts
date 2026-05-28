@@ -1,12 +1,12 @@
-export interface UserAccessRecord {
-  freeMapUsed: boolean;
-  subscriptionActive: boolean;
-  stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
-  currentPeriodEnd?: number;
-}
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  accessRowToRecord,
+  recordToAccessRow,
+  type UserAccessRow,
+} from "@/lib/supabase/rows";
+import type { UserAccessRecord } from "@/types/user-access";
 
-const store = new Map<string, UserAccessRecord>();
+export type { UserAccessRecord } from "@/types/user-access";
 
 function defaultRecord(): UserAccessRecord {
   return {
@@ -15,31 +15,51 @@ function defaultRecord(): UserAccessRecord {
   };
 }
 
-export function getUserAccess(userId: string): UserAccessRecord {
-  return store.get(userId) ?? defaultRecord();
+export async function getUserAccess(userId: string): Promise<UserAccessRecord> {
+  const { data, error } = await getSupabaseAdmin()
+    .from("user_access")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getUserAccess:", error.message);
+    return defaultRecord();
+  }
+  return accessRowToRecord((data as UserAccessRow | null) ?? null);
 }
 
-export function canUserGenerate(userId: string): boolean {
-  const access = getUserAccess(userId);
+/** When mapCount is provided, any existing maps block another free generation. */
+export async function canUserGenerate(
+  userId: string,
+  mapCount?: number
+): Promise<boolean> {
+  const access = await getUserAccess(userId);
   if (access.subscriptionActive) return true;
+  if (mapCount !== undefined && mapCount > 0) return false;
   return !access.freeMapUsed;
 }
 
-export function markFreeMapUsed(userId: string): void {
-  const current = getUserAccess(userId);
-  store.set(userId, { ...current, freeMapUsed: true });
+export async function markFreeMapUsed(userId: string): Promise<void> {
+  const current = await getUserAccess(userId);
+  const row = recordToAccessRow(userId, { ...current, freeMapUsed: true });
+  const { error } = await getSupabaseAdmin()
+    .from("user_access")
+    .upsert(row, { onConflict: "user_id" });
+
+  if (error) throw new Error(error.message);
 }
 
-export function activateSubscription(
+export async function activateSubscription(
   userId: string,
   data: {
     stripeCustomerId?: string;
     stripeSubscriptionId?: string;
     currentPeriodEnd?: number;
   }
-): void {
-  const current = getUserAccess(userId);
-  store.set(userId, {
+): Promise<void> {
+  const current = await getUserAccess(userId);
+  const row = recordToAccessRow(userId, {
     ...current,
     subscriptionActive: true,
     stripeCustomerId: data.stripeCustomerId ?? current.stripeCustomerId,
@@ -47,28 +67,55 @@ export function activateSubscription(
       data.stripeSubscriptionId ?? current.stripeSubscriptionId,
     currentPeriodEnd: data.currentPeriodEnd ?? current.currentPeriodEnd,
   });
+  const { error } = await getSupabaseAdmin()
+    .from("user_access")
+    .upsert(row, { onConflict: "user_id" });
+
+  if (error) throw new Error(error.message);
 }
 
-export function deactivateSubscription(userId: string): void {
-  const current = getUserAccess(userId);
-  store.set(userId, {
+export async function deactivateSubscription(userId: string): Promise<void> {
+  const current = await getUserAccess(userId);
+  const row = recordToAccessRow(userId, {
     ...current,
     subscriptionActive: false,
     stripeSubscriptionId: undefined,
     currentPeriodEnd: undefined,
   });
+  const { error } = await getSupabaseAdmin()
+    .from("user_access")
+    .upsert(row, { onConflict: "user_id" });
+
+  if (error) throw new Error(error.message);
 }
 
-export function getAccessSummary(userId: string) {
-  const access = getUserAccess(userId);
+export async function findUserIdBySubscriptionId(
+  subscriptionId: string
+): Promise<string | null> {
+  const { data, error } = await getSupabaseAdmin()
+    .from("user_access")
+    .select("user_id")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("findUserIdBySubscriptionId:", error.message);
+    return null;
+  }
+  return data?.user_id ?? null;
+}
+
+export async function getAccessSummary(userId: string, mapCount?: number) {
+  const access = await getUserAccess(userId);
+  const canGenerate = await canUserGenerate(userId, mapCount);
   return {
-    canGenerate: canUserGenerate(userId),
+    canGenerate,
     freeMapUsed: access.freeMapUsed,
     subscriptionActive: access.subscriptionActive,
     freeMapsRemaining: access.subscriptionActive
       ? null
-      : access.freeMapUsed
-        ? 0
-        : 1,
+      : canGenerate
+        ? 1
+        : 0,
   };
 }

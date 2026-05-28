@@ -2,12 +2,37 @@
  * End-to-end API flow test (run with dev server: npm run dev)
  * Usage: node scripts/e2e-flow.mjs [baseUrl]
  */
-import { mkdir, writeFile } from "fs/promises";
+import { readFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js";
 
-const BASE = process.argv[2] ?? "http://localhost:3000";
+const BASE =
+  process.argv[2] ?? process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+async function loadEnvLocal() {
+  try {
+    const envRaw = await readFile(path.join(ROOT, ".env.local"), "utf8");
+    for (const line of envRaw.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq === -1) continue;
+      const name = trimmed.slice(0, eq).trim();
+      let value = trimmed.slice(eq + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      if (!process.env[name]) process.env[name] = value;
+    }
+  } catch {
+    /* optional */
+  }
+}
 
 let cookies = "";
 let passed = 0;
@@ -67,50 +92,69 @@ function minimalDemoPayload() {
       title: "E2E Test Course",
       inferred_subject: "Testing",
       structure_confidence: "high",
-      summary: "Automated end-to-end flow verification map.",
+      input_reconstruction_summary: "Automated end-to-end flow verification map.",
+      key_themes: ["testing"],
     },
     concept_map: [
       {
         id: "topic-a",
         module: "Topic A",
-        description: "First test topic for e2e.",
-        learning_points: [
-          { point: "Key idea one", exam_weight: "high" },
-        ],
+        detailed_description: "First test topic for e2e.",
+        what_this_really_covers: "E2E topic coverage.",
+        why_it_matters: "Validates library read path.",
+        learning_points: [{ point: "Key idea one", exam_weight: "high" }],
         exam_priority_note: "High yield for exams.",
         importance: "core",
         difficulty: "easy",
         prerequisites: [],
         connects_to: [],
         likely_exam_relevance: "high",
+        common_student_confusions: [],
         estimated_mastery_hours: 2,
       },
     ],
+    learning_graph_edges: [],
     learning_sequence: [
-      { step: 1, module_id: "topic-a", reason: "Foundation" },
+      { step: 1, module_id: "topic-a", reason_for_position: "Foundation" },
     ],
-    high_level_dependencies: [],
-    missing_or_unclear_areas: [],
+    high_yield_map: {
+      must_know: ["topic-a"],
+      should_know: [],
+      nice_to_know: [],
+      reasoning: "Single-topic test map.",
+    },
+    knowledge_gaps: [],
   };
 }
 
 async function injectDemoMap(userId, mapId) {
+  await loadEnvLocal();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
+  if (!url || !key) {
+    throw new Error("Supabase env vars required for E2E map inject");
+  }
+
   const now = Date.now();
-  const record = {
-    ...minimalDemoPayload(),
+  const payload = minimalDemoPayload();
+  const { error } = await createClient(url, key, {
+    auth: { persistSession: false },
+  }).from("course_maps").insert({
     id: mapId,
-    userId,
-    sourceText: "E2E test materials for CourseMap flow verification.",
-    createdAt: now,
-    updatedAt: now,
-  };
-  const dir = path.join(ROOT, ".data", "course-maps", userId);
-  await mkdir(dir, { recursive: true });
-  await writeFile(
-    path.join(dir, `${mapId}.json`),
-    JSON.stringify(record, null, 2),
-    "utf8"
-  );
+    user_id: userId,
+    course_map_overview: payload.course_map_overview,
+    concept_map: payload.concept_map,
+    learning_graph_edges: payload.learning_graph_edges,
+    learning_sequence: payload.learning_sequence,
+    high_yield_map: payload.high_yield_map,
+    knowledge_gaps: payload.knowledge_gaps,
+    source_text: "E2E test materials for CourseMap flow verification.",
+    created_at: now,
+    updated_at: now,
+  });
+
+  if (error) throw new Error(`injectDemoMap: ${error.message}`);
 }
 
 async function main() {

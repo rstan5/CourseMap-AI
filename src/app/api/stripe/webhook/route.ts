@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import {
   activateSubscription,
   deactivateSubscription,
+  findUserIdBySubscriptionId,
 } from "@/lib/subscription-store";
 import { getStripe } from "@/lib/stripe";
 
@@ -36,7 +37,8 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id;
+        const userId =
+          session.client_reference_id ?? session.metadata?.user_id ?? null;
         if (!userId) break;
 
         const subscriptionId =
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
             ? session.subscription
             : session.subscription?.id;
 
-        activateSubscription(userId, {
+        await activateSubscription(userId, {
           stripeCustomerId:
             typeof session.customer === "string"
               ? session.customer
@@ -55,26 +57,30 @@ export async function POST(request: NextRequest) {
       }
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata.user_id;
+        const userId =
+          subscription.metadata.user_id ??
+          (await findUserIdBySubscriptionId(subscription.id));
         if (!userId) break;
 
         if (
           subscription.status === "active" ||
           subscription.status === "trialing"
         ) {
-          activateSubscription(userId, {
+          await activateSubscription(userId, {
             stripeCustomerId: subscription.customer as string,
             stripeSubscriptionId: subscription.id,
           });
         } else {
-          deactivateSubscription(userId);
+          await deactivateSubscription(userId);
         }
         break;
       }
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata.user_id;
-        if (userId) deactivateSubscription(userId);
+        const userId =
+          subscription.metadata.user_id ??
+          (await findUserIdBySubscriptionId(subscription.id));
+        if (userId) await deactivateSubscription(userId);
         break;
       }
       default:

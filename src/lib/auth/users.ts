@@ -1,6 +1,6 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
-import path from "path";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { userRowToStored, type UserRow } from "@/lib/supabase/rows";
 
 export interface StoredUser {
   id: string;
@@ -10,40 +10,37 @@ export interface StoredUser {
   createdAt: number;
 }
 
-const USERS_DIR = path.join(process.cwd(), ".data", "users");
-
-function userPath(id: string) {
-  return path.join(USERS_DIR, `${id}.json`);
-}
-
-function emailIndexPath(email: string) {
-  return path.join(USERS_DIR, "by-email", `${email.toLowerCase()}.json`);
-}
-
-async function ensureDirs() {
-  await mkdir(path.join(USERS_DIR, "by-email"), { recursive: true });
-}
-
 export async function findUserByEmail(
   email: string
 ): Promise<StoredUser | null> {
-  try {
-    const raw = await readFile(emailIndexPath(email), "utf8");
-    const { id } = JSON.parse(raw) as { id: string };
-    const userRaw = await readFile(userPath(id), "utf8");
-    return JSON.parse(userRaw) as StoredUser;
-  } catch {
+  const normalized = email.trim().toLowerCase();
+  const { data, error } = await getSupabaseAdmin()
+    .from("users")
+    .select("*")
+    .eq("email", normalized)
+    .maybeSingle();
+
+  if (error) {
+    console.error("findUserByEmail:", error.message);
     return null;
   }
+  if (!data) return null;
+  return userRowToStored(data as UserRow);
 }
 
 export async function findUserById(id: string): Promise<StoredUser | null> {
-  try {
-    const raw = await readFile(userPath(id), "utf8");
-    return JSON.parse(raw) as StoredUser;
-  } catch {
+  const { data, error } = await getSupabaseAdmin()
+    .from("users")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("findUserById:", error.message);
     return null;
   }
+  if (!data) return null;
+  return userRowToStored(data as UserRow);
 }
 
 export async function createUser(input: {
@@ -51,7 +48,6 @@ export async function createUser(input: {
   password: string;
   name: string;
 }): Promise<StoredUser> {
-  await ensureDirs();
   const normalized = input.email.trim().toLowerCase();
   const existing = await findUserByEmail(normalized);
   if (existing) {
@@ -66,12 +62,21 @@ export async function createUser(input: {
     createdAt: Date.now(),
   };
 
-  await writeFile(userPath(user.id), JSON.stringify(user, null, 2), "utf8");
-  await writeFile(
-    emailIndexPath(normalized),
-    JSON.stringify({ id: user.id }),
-    "utf8"
-  );
+  const { error } = await getSupabaseAdmin().from("users").insert({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    password_hash: user.passwordHash,
+    created_at: user.createdAt,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("An account with this email already exists.");
+    }
+    throw new Error(error.message);
+  }
+
   return user;
 }
 

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         ? session.subscription
         : session.subscription?.id;
 
-    activateSubscription(userId, {
+    await activateSubscription(userId, {
       stripeCustomerId: session.customer as string | undefined,
       stripeSubscriptionId: subscriptionId,
     });

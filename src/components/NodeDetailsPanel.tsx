@@ -79,7 +79,17 @@ function PanelContent({
         <section className="mt-6">
           <SectionLabel icon={Layers} label="Overview" />
           <p className="text-sm font-medium leading-relaxed text-foreground/90">
-            {module.description}
+            {module.detailed_description}
+          </p>
+        </section>
+
+        <section className="mt-6">
+          <SectionLabel icon={BookOpen} label="What this really covers" />
+          <p className="text-sm font-medium leading-relaxed text-foreground/90">
+            {module.what_this_really_covers}
+          </p>
+          <p className="mt-2 text-xs font-semibold text-muted-foreground">
+            Why it matters: {module.why_it_matters}
           </p>
         </section>
 
@@ -143,6 +153,13 @@ function PanelContent({
             </p>
           )}
         </section>
+
+        {module.common_student_confusions.length > 0 && (
+          <section className="mt-8 pb-4">
+            <SectionLabel icon={Target} label="Common confusions" />
+            <TagList items={module.common_student_confusions} variant="soft" />
+          </section>
+        )}
       </div>
     </div>
   );

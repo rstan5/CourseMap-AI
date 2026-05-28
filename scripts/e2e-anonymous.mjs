@@ -1,7 +1,8 @@
 /**
  * Anonymous generate + paywall gate tests
  */
-const BASE = process.argv[2] ?? "http://localhost:3003";
+const BASE =
+  process.argv[2] ?? process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
 let cookies = "";
 

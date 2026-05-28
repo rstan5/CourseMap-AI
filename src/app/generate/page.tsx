@@ -15,7 +15,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCourseLibrary } from "@/hooks/use-course-library";
 import { getUploadGenerateLabel } from "@/lib/generate-label";
 import { friendlyApiError, parseApiResponse } from "@/lib/parse-api-response";
-import type { AuthUser } from "@/types/auth";
 import type { CourseMapData, GenerateCourseResponse, GetCourseMapResponse } from "@/types/course";
 
 type GenerateView = "upload" | "generating";
@@ -110,7 +109,7 @@ export default function GeneratePage() {
   }, []);
 
   const handleAuthSuccess = useCallback(
-    async (_authedUser: AuthUser) => {
+    async () => {
       await refreshAuth();
       await refreshAccess();
       await refreshLibrary();

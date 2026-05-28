@@ -37,8 +37,13 @@ export function CourseMapSection({ course }: CourseMapSectionProps) {
             {overview.title}
           </h2>
           <p className="mt-2 max-w-2xl text-sm font-medium text-muted-foreground">
-            {overview.summary}
+            {overview.input_reconstruction_summary}
           </p>
+          {overview.key_themes.length > 0 && (
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">
+              Key themes: {overview.key_themes.join(" · ")}
+            </p>
+          )}
           <p className="mt-2 text-xs font-semibold text-muted-foreground">
             Structure confidence:{" "}
             <span className="capitalize text-foreground">
@@ -55,10 +60,14 @@ export function CourseMapSection({ course }: CourseMapSectionProps) {
         </Link>
       </div>
 
-      <CourseGraph conceptMap={course.concept_map} height="min-h-[520px]" />
+      <CourseGraph
+        conceptMap={course.concept_map}
+        learningGraphEdges={course.learning_graph_edges}
+        height="min-h-[520px]"
+      />
       <p className="mt-4 text-center text-xs font-semibold text-muted-foreground">
-        Click a module to see details · Solid arrows = prerequisites · Dashed =
-        connects to
+        Click a module for details · Solid = prerequisite · Purple = builds on
+        · Dashed = related
       </p>
     </section>
   );

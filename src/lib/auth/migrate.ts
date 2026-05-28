@@ -1,5 +1,9 @@
-import { migrateLibraryOwner } from "@/lib/course-library-store";
-import { getUserAccess, markFreeMapUsed, activateSubscription } from "@/lib/subscription-store";
+import { listCourseMapsForUser, migrateLibraryOwner } from "@/lib/course-library-store";
+import {
+  activateSubscription,
+  getUserAccess,
+  markFreeMapUsed,
+} from "@/lib/subscription-store";
 
 export async function migrateAnonymousToAccount(
   anonymousId: string,
@@ -7,15 +11,19 @@ export async function migrateAnonymousToAccount(
 ): Promise<void> {
   await migrateLibraryOwner(anonymousId, accountId);
 
-  const anonAccess = getUserAccess(anonymousId);
-  const accountAccess = getUserAccess(accountId);
+  const anonAccess = await getUserAccess(anonymousId);
+  const accountAccess = await getUserAccess(accountId);
+  const migratedMaps = await listCourseMapsForUser(accountId);
 
-  if (anonAccess.freeMapUsed && !accountAccess.freeMapUsed) {
-    markFreeMapUsed(accountId);
+  if (
+    (anonAccess.freeMapUsed || migratedMaps.length > 0) &&
+    !accountAccess.freeMapUsed
+  ) {
+    await markFreeMapUsed(accountId);
   }
 
   if (anonAccess.subscriptionActive && !accountAccess.subscriptionActive) {
-    activateSubscription(accountId, {
+    await activateSubscription(accountId, {
       stripeCustomerId: anonAccess.stripeCustomerId,
       stripeSubscriptionId: anonAccess.stripeSubscriptionId,
       currentPeriodEnd: anonAccess.currentPeriodEnd,

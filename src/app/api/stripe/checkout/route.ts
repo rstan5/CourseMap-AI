@@ -24,6 +24,10 @@ export async function POST() {
       cancel_url: `${appUrl}/generate?checkout=cancelled`,
       client_reference_id: userId,
       allow_promotion_codes: true,
+      metadata: { user_id: userId },
+      subscription_data: {
+        metadata: { user_id: userId },
+      },
     });
 
     if (!session.url) {

@@ -1,7 +1,8 @@
 /**
  * Full product flow: anonymous generate → signup migrate → view → second map paywall
  */
-const BASE = process.argv[2] ?? "http://localhost:3003";
+const BASE =
+  process.argv[2] ?? process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const SAMPLE =
   "Macroeconomics course notes: GDP, inflation, unemployment, fiscal policy, monetary policy, " +
   "central banking, Phillips curve, and international trade over twelve weeks.";

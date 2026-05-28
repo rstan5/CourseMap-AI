@@ -1,6 +1,6 @@
 import dagre from "dagre";
 import type { Edge, Node } from "@xyflow/react";
-import type { ConceptMapModule } from "@/types/course";
+import type { ConceptMapModule, LearningGraphEdge } from "@/types/course";
 
 export type CourseNodeData = ConceptMapModule & {
   label: string;
@@ -8,7 +8,7 @@ export type CourseNodeData = ConceptMapModule & {
 };
 
 export type CourseEdgeData = {
-  edgeType: "prerequisite" | "connects";
+  edgeType: "prerequisite" | "builds_on" | "connects";
 };
 
 const NODE_WIDTH = 220;
@@ -40,7 +40,18 @@ function buildRefResolver(conceptMap: ConceptMapModule[]) {
   };
 }
 
-export function buildGraph(conceptMap: ConceptMapModule[]): {
+function relationshipToEdgeType(
+  relationship: LearningGraphEdge["relationship"]
+): CourseEdgeData["edgeType"] {
+  if (relationship === "prerequisite") return "prerequisite";
+  if (relationship === "builds_on") return "builds_on";
+  return "connects";
+}
+
+export function buildGraph(
+  conceptMap: ConceptMapModule[],
+  learningGraphEdges: LearningGraphEdge[] = []
+): {
   nodes: Node<CourseNodeData>[];
   edges: Edge<CourseEdgeData>[];
 } {
@@ -60,40 +71,54 @@ export function buildGraph(conceptMap: ConceptMapModule[]): {
   const edges: Edge<CourseEdgeData>[] = [];
   const edgeKeys = new Set<string>();
 
-  const addEdge = (edge: Edge<CourseEdgeData>) => {
-    const key = `${edge.source}->${edge.target}:${edge.data?.edgeType}`;
+  const addEdge = (
+    sourceId: string,
+    targetId: string,
+    edgeType: CourseEdgeData["edgeType"],
+    prefix: string
+  ) => {
+    if (!nodeIds.has(sourceId) || !nodeIds.has(targetId) || sourceId === targetId) {
+      return;
+    }
+    const key = `${sourceId}->${targetId}:${edgeType}`;
     if (edgeKeys.has(key)) return;
     edgeKeys.add(key);
-    edges.push(edge);
+
+    edges.push({
+      id: `${prefix}-${sourceId}-${targetId}`,
+      source: sourceId,
+      target: targetId,
+      type: "smoothstep",
+      data: { edgeType },
+    });
   };
+
+  for (const edge of learningGraphEdges) {
+    const sourceId = resolveRef(edge.from);
+    const targetId = resolveRef(edge.to);
+    if (!sourceId || !targetId) continue;
+
+    addEdge(
+      sourceId,
+      targetId,
+      relationshipToEdgeType(edge.relationship),
+      "graph"
+    );
+  }
 
   for (const item of conceptMap) {
     const targetId = sanitizeNodeId(item.id);
 
     for (const prereq of item.prerequisites) {
       const sourceId = resolveRef(prereq);
-      if (!sourceId || !nodeIds.has(sourceId) || sourceId === targetId) continue;
-
-      addEdge({
-        id: `pre-${sourceId}-${targetId}`,
-        source: sourceId,
-        target: targetId,
-        type: "smoothstep",
-        data: { edgeType: "prerequisite" },
-      });
+      if (!sourceId) continue;
+      addEdge(sourceId, targetId, "prerequisite", "pre");
     }
 
     for (const related of item.connects_to) {
       const relatedId = resolveRef(related);
-      if (!relatedId || !nodeIds.has(relatedId) || relatedId === targetId) continue;
-
-      addEdge({
-        id: `conn-${targetId}-${relatedId}`,
-        source: targetId,
-        target: relatedId,
-        type: "smoothstep",
-        data: { edgeType: "connects" },
-      });
+      if (!relatedId) continue;
+      addEdge(targetId, relatedId, "connects", "conn");
     }
   }
 
@@ -136,8 +161,11 @@ export function layoutGraph(
   });
 }
 
-export function prepareGraph(conceptMap: ConceptMapModule[]) {
-  const { nodes, edges } = buildGraph(conceptMap);
+export function prepareGraph(
+  conceptMap: ConceptMapModule[],
+  learningGraphEdges: LearningGraphEdge[] = []
+) {
+  const { nodes, edges } = buildGraph(conceptMap, learningGraphEdges);
   const layoutedNodes = layoutGraph(nodes, edges);
   return { nodes: layoutedNodes, edges };
 }

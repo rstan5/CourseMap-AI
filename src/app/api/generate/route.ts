@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import {
   getCourseMapForUser,
+  listCourseMapsForUser,
   storedToClientData,
   updateCourseMapForUser,
 } from "@/lib/course-library-store";
@@ -118,9 +119,10 @@ export async function POST(request: NextRequest) {
       const existingPayload = {
         course_map_overview: existing.course_map_overview,
         concept_map: existing.concept_map,
+        learning_graph_edges: existing.learning_graph_edges,
         learning_sequence: existing.learning_sequence,
-        high_level_dependencies: existing.high_level_dependencies,
-        missing_or_unclear_areas: existing.missing_or_unclear_areas,
+        high_yield_map: existing.high_yield_map,
+        knowledge_gaps: existing.knowledge_gaps,
       };
 
       const payload = await refineCourseStructure(
@@ -150,7 +152,8 @@ export async function POST(request: NextRequest) {
 
     // New course map
     if (!authUser) {
-      if (!canUserGenerate(anonymousId)) {
+      const anonMapCount = (await listCourseMapsForUser(anonymousId)).length;
+      if (!(await canUserGenerate(anonymousId, anonMapCount))) {
         return NextResponse.json(
           {
             success: false,
@@ -164,7 +167,7 @@ export async function POST(request: NextRequest) {
 
       const generated = await generateCourseStructure(openai, rawText);
       const data = await saveCourseMap(anonymousId, generated, rawText);
-      markFreeMapUsed(anonymousId);
+      await markFreeMapUsed(anonymousId);
 
       return NextResponse.json({
         success: true,
@@ -174,7 +177,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (!canUserGenerate(authUser.id)) {
+    const accountMapCount = (await listCourseMapsForUser(authUser.id)).length;
+    if (!(await canUserGenerate(authUser.id, accountMapCount))) {
       return NextResponse.json(
         {
           success: false,
@@ -185,12 +189,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accessBefore = getUserAccess(authUser.id);
+    const accessBefore = await getUserAccess(authUser.id);
     const generated = await generateCourseStructure(openai, rawText);
     const data = await saveCourseMap(authUser.id, generated, rawText);
 
     if (!accessBefore.subscriptionActive) {
-      markFreeMapUsed(authUser.id);
+      await markFreeMapUsed(authUser.id);
     }
 
     return NextResponse.json({ success: true, data, refined: false });

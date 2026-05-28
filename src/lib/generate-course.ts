@@ -3,43 +3,11 @@ import {
   buildCourseMapUserPrompt,
   COURSE_MAP_SYSTEM_PROMPT,
 } from "@/lib/course-prompts";
+import { normalizeCourseMap } from "@/lib/normalize-course-map";
 import { courseMapResponseSchema } from "@/lib/course-schema";
-import type { CourseMapPayload, ConceptMapModule } from "@/types/course";
+import type { CourseMapPayload } from "@/types/course";
 
 const DEFAULT_MODEL = "gpt-4o-mini";
-
-function normalizeModule(module: ConceptMapModule): ConceptMapModule {
-  const learningPoints =
-    module.learning_points.length > 0
-      ? module.learning_points
-      : [
-          {
-            point: module.description,
-            exam_weight: module.likely_exam_relevance,
-          },
-        ];
-
-  const examNote =
-    module.exam_priority_note ||
-    (module.likely_exam_relevance === "high"
-      ? "This topic is likely to appear on exams — prioritize mastering it."
-      : module.likely_exam_relevance === "medium"
-        ? "Useful for exams as supporting context."
-        : "Lower exam priority — review after core topics.");
-
-  return {
-    ...module,
-    learning_points: learningPoints,
-    exam_priority_note: examNote,
-  };
-}
-
-function normalizeCourseMap(data: CourseMapPayload): CourseMapPayload {
-  return {
-    ...data,
-    concept_map: data.concept_map.map(normalizeModule),
-  };
-}
 
 export async function generateCourseStructure(
   openai: OpenAI,

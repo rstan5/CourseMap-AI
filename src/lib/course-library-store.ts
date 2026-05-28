@@ -1,21 +1,12 @@
-import { mkdir, readFile, readdir, unlink, writeFile } from "fs/promises";
-import path from "path";
+import { normalizeCourseMap } from "@/lib/normalize-course-map";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  courseMapRowToStored,
+  storedToCourseMapRow,
+  type CourseMapRow,
+} from "@/lib/supabase/rows";
 import type { CourseMapPayload } from "@/types/course";
 import type { CourseMapSummary, StoredCourseMap } from "@/types/course-library";
-
-const DATA_DIR = path.join(process.cwd(), ".data", "course-maps");
-
-function userDir(userId: string) {
-  return path.join(DATA_DIR, userId);
-}
-
-function mapPath(userId: string, id: string) {
-  return path.join(userDir(userId), `${id}.json`);
-}
-
-async function ensureUserDir(userId: string) {
-  await mkdir(userDir(userId), { recursive: true });
-}
 
 function toSummary(record: StoredCourseMap): CourseMapSummary {
   return {
@@ -28,67 +19,63 @@ function toSummary(record: StoredCourseMap): CourseMapSummary {
 }
 
 function toClientData(record: StoredCourseMap): import("@/types/course").CourseMapData {
-  return {
-    id: record.id,
-    course_map_overview: record.course_map_overview,
-    concept_map: record.concept_map,
-    learning_sequence: record.learning_sequence,
-    high_level_dependencies: record.high_level_dependencies,
-    missing_or_unclear_areas: record.missing_or_unclear_areas,
-  };
-}
-
-async function readRecord(
-  userId: string,
-  id: string
-): Promise<StoredCourseMap | null> {
-  try {
-    const raw = await readFile(mapPath(userId, id), "utf8");
-    return JSON.parse(raw) as StoredCourseMap;
-  } catch {
-    return null;
-  }
+  const normalized = normalizeCourseMap(record as unknown as CourseMapPayload);
+  return { id: record.id, ...normalized };
 }
 
 export async function listCourseMapsForUser(
   userId: string
 ): Promise<CourseMapSummary[]> {
-  const dir = userDir(userId);
-  try {
-    const files = await readdir(dir);
-    const summaries: CourseMapSummary[] = [];
-    for (const file of files) {
-      if (!file.endsWith(".json")) continue;
-      const raw = await readFile(path.join(dir, file), "utf8");
-      const record = JSON.parse(raw) as StoredCourseMap;
-      summaries.push(toSummary(record));
-    }
-    return summaries.sort((a, b) => b.updatedAt - a.updatedAt);
-  } catch {
+  const { data, error } = await getSupabaseAdmin()
+    .from("course_maps")
+    .select("*")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    console.error("listCourseMapsForUser:", error.message);
     return [];
   }
+
+  return (data as CourseMapRow[]).map((row) =>
+    toSummary(courseMapRowToStored(row))
+  );
 }
 
 export async function getCourseMapForUser(
   userId: string,
   id: string
 ): Promise<StoredCourseMap | null> {
-  const record = await readRecord(userId, id);
-  if (!record || record.userId !== userId) return null;
-  return record;
-}
+  const { data, error } = await getSupabaseAdmin()
+    .from("course_maps")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
 
-export async function getCourseMapById(id: string): Promise<StoredCourseMap | null> {
-  try {
-    const users = await readdir(DATA_DIR);
-    for (const userId of users) {
-      const record = await readRecord(userId, id);
-      if (record) return record;
-    }
-  } catch {
+  if (error) {
+    console.error("getCourseMapForUser:", error.message);
     return null;
   }
-  return null;
+  if (!data) return null;
+  return courseMapRowToStored(data as CourseMapRow);
+}
+
+export async function getCourseMapById(
+  id: string
+): Promise<StoredCourseMap | null> {
+  const { data, error } = await getSupabaseAdmin()
+    .from("course_maps")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getCourseMapById:", error.message);
+    return null;
+  }
+  if (!data) return null;
+  return courseMapRowToStored(data as CourseMapRow);
 }
 
 export async function createCourseMapForUser(
@@ -96,18 +83,21 @@ export async function createCourseMapForUser(
   payload: CourseMapPayload,
   sourceText: string
 ): Promise<StoredCourseMap> {
-  await ensureUserDir(userId);
   const now = Date.now();
-  const id = crypto.randomUUID();
   const record: StoredCourseMap = {
     ...payload,
-    id,
+    id: crypto.randomUUID(),
     userId,
     sourceText,
     createdAt: now,
     updatedAt: now,
   };
-  await writeFile(mapPath(userId, id), JSON.stringify(record, null, 2), "utf8");
+
+  const { error } = await getSupabaseAdmin()
+    .from("course_maps")
+    .insert(storedToCourseMapRow(record));
+
+  if (error) throw new Error(error.message);
   return record;
 }
 
@@ -117,8 +107,8 @@ export async function updateCourseMapForUser(
   payload: CourseMapPayload,
   additionalSourceText: string
 ): Promise<StoredCourseMap | null> {
-  const existing = await readRecord(userId, id);
-  if (!existing || existing.userId !== userId) return null;
+  const existing = await getCourseMapForUser(userId, id);
+  if (!existing) return null;
 
   const now = Date.now();
   const record: StoredCourseMap = {
@@ -131,7 +121,17 @@ export async function updateCourseMapForUser(
     createdAt: existing.createdAt,
     updatedAt: now,
   };
-  await writeFile(mapPath(userId, id), JSON.stringify(record, null, 2), "utf8");
+
+  const { error } = await getSupabaseAdmin()
+    .from("course_maps")
+    .update(storedToCourseMapRow(record))
+    .eq("id", id)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("updateCourseMapForUser:", error.message);
+    return null;
+  }
   return record;
 }
 
@@ -145,26 +145,13 @@ export async function migrateLibraryOwner(
 ): Promise<void> {
   if (fromOwnerId === toOwnerId) return;
 
-  const from = userDir(fromOwnerId);
-  await ensureUserDir(toOwnerId);
+  const { error } = await getSupabaseAdmin()
+    .from("course_maps")
+    .update({ user_id: toOwnerId })
+    .eq("user_id", fromOwnerId);
 
-  let files: string[];
-  try {
-    files = await readdir(from);
-  } catch {
-    return;
-  }
-
-  for (const file of files) {
-    if (!file.endsWith(".json")) continue;
-    const raw = await readFile(path.join(from, file), "utf8");
-    const record = JSON.parse(raw) as StoredCourseMap;
-    record.userId = toOwnerId;
-    await writeFile(
-      mapPath(toOwnerId, record.id),
-      JSON.stringify(record, null, 2),
-      "utf8"
-    );
-    await unlink(path.join(from, file));
+  if (error) {
+    console.error("migrateLibraryOwner:", error.message);
+    throw new Error(error.message);
   }
 }
