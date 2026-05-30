@@ -144,6 +144,7 @@ function CourseMapContent() {
         {course && !loading && !error && user && (
           <CourseGraph
             conceptMap={course.concept_map}
+            learningGraphEdges={course.learning_graph_edges ?? []}
             height="h-full"
             className="h-full rounded-none"
           />

@@ -39,9 +39,9 @@ export function CourseMapSection({ course }: CourseMapSectionProps) {
           <p className="mt-2 max-w-2xl text-sm font-medium text-muted-foreground">
             {overview.input_reconstruction_summary}
           </p>
-          {overview.key_themes.length > 0 && (
+          {(overview.key_themes?.length ?? 0) > 0 && (
             <p className="mt-2 text-xs font-semibold text-muted-foreground">
-              Key themes: {overview.key_themes.join(" · ")}
+              Key themes: {(overview.key_themes ?? []).join(" · ")}
             </p>
           )}
           <p className="mt-2 text-xs font-semibold text-muted-foreground">

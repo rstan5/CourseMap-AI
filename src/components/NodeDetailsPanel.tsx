@@ -11,7 +11,11 @@ import {
   BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { examRelevanceConfig, examWeightLabel } from "@/lib/exam-styles";
+import {
+  examRelevanceConfig,
+  examWeightLabel,
+  getExamRelevanceStyle,
+} from "@/lib/exam-styles";
 import type { ConceptMapModule } from "@/types/course";
 
 interface NodeDetailsPanelProps {
@@ -48,11 +52,11 @@ function PanelContent({
   module: ConceptMapModule;
   onClose: () => void;
 }) {
-  const examStyle = examRelevanceConfig[module.likely_exam_relevance];
+  const examStyle = getExamRelevanceStyle(module.likely_exam_relevance);
   const learningPoints = [...(module.learning_points ?? [])].sort(
     (a, b) =>
-      examRelevanceConfig[b.exam_weight].priority -
-      examRelevanceConfig[a.exam_weight].priority
+      getExamRelevanceStyle(b.exam_weight).priority -
+      getExamRelevanceStyle(a.exam_weight).priority
   );
   const highCount = learningPoints.filter((p) => p.exam_weight === "high").length;
 

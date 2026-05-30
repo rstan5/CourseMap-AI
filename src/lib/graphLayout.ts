@@ -109,13 +109,13 @@ export function buildGraph(
   for (const item of conceptMap) {
     const targetId = sanitizeNodeId(item.id);
 
-    for (const prereq of item.prerequisites) {
+    for (const prereq of item.prerequisites ?? []) {
       const sourceId = resolveRef(prereq);
       if (!sourceId) continue;
       addEdge(sourceId, targetId, "prerequisite", "pre");
     }
 
-    for (const related of item.connects_to) {
+    for (const related of item.connects_to ?? []) {
       const relatedId = resolveRef(related);
       if (!relatedId) continue;
       addEdge(targetId, relatedId, "connects", "conn");
@@ -149,13 +149,15 @@ export function layoutGraph(
 
   dagre.layout(graph);
 
-  return nodes.map((node) => {
+  return nodes.map((node, index) => {
     const position = graph.node(node.id);
+    const x = position?.x ?? (index % 4) * (NODE_WIDTH + 40);
+    const y = position?.y ?? Math.floor(index / 4) * (NODE_HEIGHT + 48);
     return {
       ...node,
       position: {
-        x: position.x - NODE_WIDTH / 2,
-        y: position.y - NODE_HEIGHT / 2,
+        x: x - NODE_WIDTH / 2,
+        y: y - NODE_HEIGHT / 2,
       },
     };
   });

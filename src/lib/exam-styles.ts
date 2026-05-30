@@ -47,3 +47,14 @@ export function examWeightLabel(weight: ExamRelevance): string {
   if (weight === "medium") return "Good to know";
   return "Lower priority";
 }
+
+const FALLBACK_EXAM_STYLE = examRelevanceConfig.medium;
+
+export function getExamRelevanceStyle(
+  weight: ExamRelevance | string | undefined
+) {
+  if (weight && weight in examRelevanceConfig) {
+    return examRelevanceConfig[weight as ExamRelevance];
+  }
+  return FALLBACK_EXAM_STYLE;
+}

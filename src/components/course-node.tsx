@@ -3,12 +3,12 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
-import { examRelevanceConfig } from "@/lib/exam-styles";
+import { getExamRelevanceStyle } from "@/lib/exam-styles";
 import type { CourseNodeData } from "@/lib/graphLayout";
 
 function CourseNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CourseNodeData;
-  const examStyle = examRelevanceConfig[nodeData.likely_exam_relevance];
+  const examStyle = getExamRelevanceStyle(nodeData.likely_exam_relevance);
 
   return (
     <>

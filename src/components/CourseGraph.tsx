@@ -94,6 +94,15 @@ function CourseGraphInner({
   );
   const { fitView } = useReactFlow();
 
+  const graphKey = useMemo(
+    () =>
+      conceptMap
+        .map((m) => m.id)
+        .sort()
+        .join("|"),
+    [conceptMap]
+  );
+
   const prepared = useMemo(
     () => prepareGraph(conceptMap, learningGraphEdges),
     [conceptMap, learningGraphEdges]
@@ -109,9 +118,16 @@ function CourseGraphInner({
   useEffect(() => {
     setNodes(prepared.nodes);
     setEdges(styledEdges);
-    const timer = setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 80);
+  }, [graphKey, prepared.nodes, prepared.edges, setNodes, setEdges]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void fitView({ padding: 0.2, duration: 400 });
+    }, 80);
     return () => clearTimeout(timer);
-  }, [prepared.nodes, styledEdges, setNodes, setEdges, fitView]);
+    // fitView identity changes every render; only re-fit when graph data changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphKey]);
 
   const selectModule = useCallback((data: CourseNodeData) => {
     setSelectedModule({
