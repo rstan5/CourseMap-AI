@@ -16,6 +16,7 @@ import {
   getUserAccess,
   markFreeMapUsed,
 } from "@/lib/subscription-store";
+import { isFounderEmail } from "@/lib/founders";
 import { getAnonymousId, getAuthenticatedUser } from "@/lib/identity";
 import type { GenerateCourseRequest } from "@/types/course";
 
@@ -177,8 +178,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const isFounder = isFounderEmail(authUser.email);
     const accountMapCount = (await listCourseMapsForUser(authUser.id)).length;
-    if (!(await canUserGenerate(authUser.id, accountMapCount))) {
+    if (!isFounder && !(await canUserGenerate(authUser.id, accountMapCount))) {
       return NextResponse.json(
         {
           success: false,
@@ -193,7 +195,7 @@ export async function POST(request: NextRequest) {
     const generated = await generateCourseStructure(openai, rawText);
     const data = await saveCourseMap(authUser.id, generated, rawText);
 
-    if (!accessBefore.subscriptionActive) {
+    if (!isFounder && !accessBefore.subscriptionActive) {
       await markFreeMapUsed(authUser.id);
     }
 

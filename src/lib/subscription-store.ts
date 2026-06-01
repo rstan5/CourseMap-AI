@@ -1,3 +1,4 @@
+import { listCourseMapsForUser } from "@/lib/course-library-store";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   accessRowToRecord,
@@ -29,25 +30,55 @@ export async function getUserAccess(userId: string): Promise<UserAccessRecord> {
   return accessRowToRecord((data as UserAccessRow | null) ?? null);
 }
 
-/** When mapCount is provided, any existing maps block another free generation. */
-export async function canUserGenerate(
-  userId: string,
-  mapCount?: number
-): Promise<boolean> {
-  const access = await getUserAccess(userId);
-  if (access.subscriptionActive) return true;
-  if (mapCount !== undefined && mapCount > 0) return false;
-  return !access.freeMapUsed;
-}
-
-export async function markFreeMapUsed(userId: string): Promise<void> {
-  const current = await getUserAccess(userId);
-  const row = recordToAccessRow(userId, { ...current, freeMapUsed: true });
+async function writeRecord(userId: string, record: UserAccessRecord) {
+  const row = recordToAccessRow(userId, record);
   const { error } = await getSupabaseAdmin()
     .from("user_access")
     .upsert(row, { onConflict: "user_id" });
 
   if (error) throw new Error(error.message);
+}
+
+/** Sync free_map_used with library: one free new map per account when map count is 0. */
+export async function syncFreeTierWithLibrary(userId: string): Promise<void> {
+  const mapCount = (await listCourseMapsForUser(userId)).length;
+  const access = await getUserAccess(userId);
+
+  if (access.subscriptionActive) return;
+
+  if (mapCount > 0 && !access.freeMapUsed) {
+    await markFreeMapUsed(userId);
+    return;
+  }
+
+  if (mapCount === 0 && access.freeMapUsed) {
+    await writeRecord(userId, {
+      ...access,
+      freeMapUsed: false,
+    });
+  }
+}
+
+/** When mapCount is provided, any existing maps block another free generation. */
+export async function canUserGenerate(
+  userId: string,
+  mapCount?: number
+): Promise<boolean> {
+  await syncFreeTierWithLibrary(userId);
+
+  const access = await getUserAccess(userId);
+  if (access.subscriptionActive) return true;
+
+  const count =
+    mapCount ?? (await listCourseMapsForUser(userId)).length;
+  if (count > 0) return false;
+
+  return !access.freeMapUsed;
+}
+
+export async function markFreeMapUsed(userId: string): Promise<void> {
+  const current = await getUserAccess(userId);
+  await writeRecord(userId, { ...current, freeMapUsed: true });
 }
 
 export async function activateSubscription(
@@ -59,7 +90,7 @@ export async function activateSubscription(
   }
 ): Promise<void> {
   const current = await getUserAccess(userId);
-  const row = recordToAccessRow(userId, {
+  await writeRecord(userId, {
     ...current,
     subscriptionActive: true,
     stripeCustomerId: data.stripeCustomerId ?? current.stripeCustomerId,
@@ -67,26 +98,16 @@ export async function activateSubscription(
       data.stripeSubscriptionId ?? current.stripeSubscriptionId,
     currentPeriodEnd: data.currentPeriodEnd ?? current.currentPeriodEnd,
   });
-  const { error } = await getSupabaseAdmin()
-    .from("user_access")
-    .upsert(row, { onConflict: "user_id" });
-
-  if (error) throw new Error(error.message);
 }
 
 export async function deactivateSubscription(userId: string): Promise<void> {
   const current = await getUserAccess(userId);
-  const row = recordToAccessRow(userId, {
+  await writeRecord(userId, {
     ...current,
     subscriptionActive: false,
     stripeSubscriptionId: undefined,
     currentPeriodEnd: undefined,
   });
-  const { error } = await getSupabaseAdmin()
-    .from("user_access")
-    .upsert(row, { onConflict: "user_id" });
-
-  if (error) throw new Error(error.message);
 }
 
 export async function findUserIdBySubscriptionId(
@@ -106,8 +127,8 @@ export async function findUserIdBySubscriptionId(
 }
 
 export async function getAccessSummary(userId: string, mapCount?: number) {
-  const access = await getUserAccess(userId);
   const canGenerate = await canUserGenerate(userId, mapCount);
+  const access = await getUserAccess(userId);
   return {
     canGenerate,
     freeMapUsed: access.freeMapUsed,
