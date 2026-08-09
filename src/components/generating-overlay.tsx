@@ -3,9 +3,9 @@
 import { Brain, Layers, Network } from "lucide-react";
 
 const steps = [
-  { icon: Brain, label: "Extracting concepts" },
-  { icon: Layers, label: "Organizing hierarchy" },
-  { icon: Network, label: "Building your map" },
+  { icon: Brain, label: "Reading your notes" },
+  { icon: Layers, label: "Keeping every detail" },
+  { icon: Network, label: "Building your note map" },
 ];
 
 interface GeneratingOverlayProps {
@@ -24,12 +24,12 @@ export function GeneratingOverlay({ refining = false }: GeneratingOverlayProps) 
 
       <div className="glass-strong max-w-lg rounded-3xl px-8 py-6 text-center">
         <h2 className="text-2xl font-extrabold text-foreground">
-          {refining ? "Refining your course map" : "Making sense of your materials"}
+          {refining ? "Merging new notes into your map" : "Digitizing your notes"}
         </h2>
         <p className="mt-3 font-medium text-muted-foreground">
           {refining
-            ? "AI is merging your new uploads into the existing map — adding concepts, connections, and exam focus."
-            : "AI is reading your notes and restructuring them into a clear course map."}
+            ? "AI is adding your new notes into the existing notebook and updating the map — without dropping what you already stored."
+            : "AI is storing your notes digitally and organizing them into a map you can navigate and chat with."}
         </p>
       </div>
 

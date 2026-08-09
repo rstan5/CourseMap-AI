@@ -48,6 +48,11 @@ function normalizeModule(module: ConceptMapModule): ConceptMapModule {
     learning_points: learningPoints,
     exam_priority_note: examNote,
     estimated_mastery_hours: Math.max(1, module.estimated_mastery_hours ?? 2),
+    full_notes:
+      module.full_notes?.trim() ||
+      description ||
+      module.what_this_really_covers ||
+      "",
   };
 }
 
@@ -68,7 +73,7 @@ function normalizeLearningGraphEdges(
   };
 
   for (const item of conceptMap) {
-    for (const prereq of item.prerequisites) {
+    for (const prereq of item.prerequisites ?? []) {
       add(prereq, item.id, "prerequisite");
     }
     for (const related of item.connects_to) {

@@ -1,27 +1,15 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { AuthModal } from "@/components/auth-modal";
+import { NotesWorkspace } from "@/components/notes-workspace";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";
 import { friendlyApiError, parseApiResponse } from "@/lib/parse-api-response";
 import type { CourseMapData, GetCourseMapResponse } from "@/types/course";
-
-const CourseGraph = dynamic(
-  () => import("@/components/CourseGraph").then((m) => m.CourseGraph),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    ),
-  }
-);
 
 function CourseMapContent() {
   const searchParams = useSearchParams();
@@ -142,12 +130,9 @@ function CourseMapContent() {
         )}
 
         {course && !loading && !error && user && (
-          <CourseGraph
-            conceptMap={course.concept_map}
-            learningGraphEdges={course.learning_graph_edges ?? []}
-            height="h-full"
-            className="h-full rounded-none"
-          />
+          <div className="h-full overflow-y-auto px-4 pb-8">
+            <NotesWorkspace course={course} />
+          </div>
         )}
       </main>
     </div>

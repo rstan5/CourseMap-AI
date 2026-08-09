@@ -99,6 +99,7 @@ function minimalDemoPayload() {
         likely_exam_relevance: "high",
         common_student_confusions: [],
         estimated_mastery_hours: 2,
+        full_notes: "Key idea one. Automated e2e note content for Topic A.",
       },
     ],
     learning_graph_edges: [],

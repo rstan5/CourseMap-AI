@@ -26,20 +26,20 @@ const advantages = [
     icon: Compass,
     title: "Built for learning",
     description:
-      "Every screen is designed for understanding — not chatting, not hoarding notes, not memorizing flashcards. Just structure you can follow.",
+      "Your notes stay intact. The map is how you navigate them — topic by topic — instead of scrolling a giant dump.",
   },
   {
     icon: Target,
     title: "Simplified explanations",
     description:
-      "AI rewrites dense material into plain-language summaries and key takeaways, so you grasp the idea before you dive into details.",
+      "Chat with your notes: extract a formula, jump to a topic, or ask the assistant to rewrite or elaborate without losing what you wrote.",
   },
 ];
 
 const moatPoints = [
   {
     title: "Purpose-built transformation",
-    body: "CourseMap does one thing exceptionally well: chaotic class materials → structured course intelligence. We are not a general chatbot with a study prompt slapped on.",
+    body: "CourseMap digitizes your real notes, organizes them into a map, and gives you an assistant that only knows YOUR notebook — not a generic chatbot.",
   },
   {
     title: "Concept-first architecture",
@@ -47,7 +47,7 @@ const moatPoints = [
   },
   {
     title: "Clarity as the product",
-    body: "The output is a visual course map you can click through, not a conversation log. That focus on navigable structure is hard to replicate with generic note tools.",
+    body: "The map is navigation. The notes are the product. Click a topic to read what you actually wrote, then ask the assistant to find or expand it.",
   },
   {
     title: "Perceived intelligence, real structure",
@@ -56,8 +56,8 @@ const moatPoints = [
 ];
 
 const notThis = [
-  "Not a chatbot you have to prompt repeatedly",
-  "Not another notes app with AI sprinkled on top",
+  "Not a summary that throws away your real notes",
+  "Not a generic chatbot that doesn't know your class",
   "Not flashcards or spaced-repetition gamification",
   "Not a social study platform",
 ];
@@ -73,9 +73,9 @@ export function LandingAdvantages() {
           Study smarter when the course finally has a shape
         </h2>
         <p className="mt-3 text-base font-medium leading-relaxed text-muted-foreground">
-          Most tools help you store chaos. CourseMap helps you understand it —
-          by turning your real class materials into a map you can explore,
-          section by section.
+          Most tools either dump your notes in a folder or summarize them away.
+          CourseMap keeps every detail, rebuilds the structure, and lets you
+          walk the map and talk to your notes.
         </p>
       </div>
 

@@ -87,6 +87,15 @@ function PanelContent({
           </p>
         </section>
 
+        {module.full_notes?.trim() ? (
+          <section className="mt-6">
+            <SectionLabel icon={BookOpen} label="Your notes" />
+            <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-foreground/90">
+              {module.full_notes}
+            </p>
+          </section>
+        ) : null}
+
         <section className="mt-6">
           <SectionLabel icon={BookOpen} label="What this really covers" />
           <p className="text-sm font-medium leading-relaxed text-foreground/90">

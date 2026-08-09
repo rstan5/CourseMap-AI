@@ -11,7 +11,7 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "CourseMap — Make your classes actually make sense",
   description:
-    "Transform messy class materials into a clean, structured course map powered by AI.",
+    "Turn your class notes into a digital notebook you can navigate like a map — and chat with to find, rewrite, or elaborate.",
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",

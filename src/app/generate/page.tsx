@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthModal } from "@/components/auth-modal";
-import { CourseMapSection } from "@/components/course-map-section";
+import { NotesWorkspace } from "@/components/notes-workspace";
 import { CourseWorkspaceShell } from "@/components/course-workspace-shell";
 import { GenerateHeader } from "@/components/generate-header";
 import { GeneratingOverlay } from "@/components/generating-overlay";
@@ -345,7 +345,7 @@ export default function GeneratePage() {
 
         {user && course && (
           <div ref={mapRef}>
-            <CourseMapSection course={course} />
+            <NotesWorkspace course={course} />
           </div>
         )}
       </CourseWorkspaceShell>
@@ -377,19 +377,19 @@ function Hero({
           </p>
           <h1 className="mt-1 text-xl font-extrabold sm:text-2xl">{title}</h1>
           <p className="mt-3 text-sm font-semibold leading-relaxed text-muted-foreground sm:text-base">
-            Upload more materials below — new lectures, slides, and notes will
-            be merged into your saved map automatically.
+            Upload more notes below — they will be merged into your digital
+            notebook and map automatically.
           </p>
         </>
       ) : (
         <>
           <h1 className="text-2xl font-extrabold sm:text-3xl">
-            Upload your course materials
+            Upload your notes
           </h1>
           <p className="mt-3 text-sm font-semibold leading-relaxed text-muted-foreground sm:text-base">
             {isAuthenticated
-              ? "Your courses are saved in the sidebar. Upload to create a new map or refine the one you have selected."
-              : "Generate your first map for free — then create an account to view it and keep building."}
+              ? "CourseMap stores your notes digitally, organizes them into a navigable map, and lets you chat with them."
+              : "Upload your first notes for free — then create an account to keep them, navigate the map, and ask the assistant."}
           </p>
         </>
       )}

@@ -31,6 +31,8 @@ export interface ConceptMapModule {
   learning_points: LearningPoint[];
   exam_priority_note: string;
   estimated_mastery_hours: number;
+  /** Student's actual notes for this topic, reorganized but not summarized away. */
+  full_notes: string;
 }
 
 export type LearningGraphRelationship =
@@ -75,6 +77,8 @@ export interface CourseMapPayload {
 
 export interface CourseMapData extends CourseMapPayload {
   id: string;
+  /** Original uploaded / pasted note text (verbatim archive). */
+  sourceText?: string;
 }
 
 export interface GenerateCourseRequest {
@@ -93,6 +97,27 @@ export interface GenerateCourseResponse {
 export interface GetCourseMapResponse {
   success: boolean;
   data?: CourseMapData;
+  error?: string;
+  code?: "AUTH_REQUIRED";
+}
+
+export type NotesChatRole = "user" | "assistant";
+
+export interface NotesChatMessage {
+  role: NotesChatRole;
+  content: string;
+}
+
+export interface NotesChatRequest {
+  mapId: string;
+  message: string;
+  history?: NotesChatMessage[];
+  focusModuleId?: string;
+}
+
+export interface NotesChatResponse {
+  success: boolean;
+  reply?: string;
   error?: string;
   code?: "AUTH_REQUIRED";
 }

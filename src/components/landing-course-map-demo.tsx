@@ -55,8 +55,8 @@ export function LandingCourseMapDemo() {
           From messy notes to a map you can study
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold leading-relaxed text-muted-foreground sm:text-base">
-          Same structure you get after generating: course overview, dependency
-          graph, exam-priority learning points, and high-yield focus areas.
+          Your notes stay intact. The map is how you navigate them — then you
+          can ask the assistant to find, rewrite, or elaborate.
         </p>
       </div>
 

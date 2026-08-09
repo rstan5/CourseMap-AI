@@ -21,17 +21,21 @@ const CourseGraph = dynamic(
 
 interface CourseMapSectionProps {
   course: CourseMapData;
+  embedded?: boolean;
 }
 
-export function CourseMapSection({ course }: CourseMapSectionProps) {
+export function CourseMapSection({
+  course,
+  embedded = false,
+}: CourseMapSectionProps) {
   const { course_map_overview: overview } = course;
 
   return (
-    <section className="mt-16 border-t border-white/50 pt-12">
+    <section className={embedded ? "" : "mt-16 border-t border-white/50 pt-12"}>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-bold uppercase tracking-wider text-primary">
-            Your course map · {overview.inferred_subject}
+            Your note map · {overview.inferred_subject}
           </p>
           <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">
             {overview.title}
@@ -66,8 +70,8 @@ export function CourseMapSection({ course }: CourseMapSectionProps) {
         height="min-h-[520px]"
       />
       <p className="mt-4 text-center text-xs font-semibold text-muted-foreground">
-        Click a module for details · Solid = prerequisite · Purple = builds on
-        · Dashed = related
+        Click a topic to open your notes · Solid = prerequisite · Purple =
+        builds on · Dashed = related
       </p>
     </section>
   );

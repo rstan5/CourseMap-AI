@@ -19,8 +19,9 @@ export function LandingHero() {
       </h1>
 
       <p className="mx-auto mt-6 max-w-2xl text-lg font-medium leading-relaxed text-muted-foreground opacity-0 animate-fade-in-up stagger-3 sm:text-xl">
-        Upload videos, slides, pictures, notes, and more. CourseMap transforms
-        them into a structured concept map you can actually follow.
+        Upload videos, slides, pictures, and notes. CourseMap keeps every detail,
+        rebuilds them into a navigable digital notebook, and lets you ask an
+        assistant to find, rewrite, or elaborate.
       </p>
 
       <div className="mt-10 opacity-0 animate-fade-in-up stagger-4">

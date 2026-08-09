@@ -20,7 +20,7 @@ function toSummary(record: StoredCourseMap): CourseMapSummary {
 
 function toClientData(record: StoredCourseMap): import("@/types/course").CourseMapData {
   const normalized = normalizeCourseMap(record as unknown as CourseMapPayload);
-  return { id: record.id, ...normalized };
+  return { id: record.id, sourceText: record.sourceText ?? "", ...normalized };
 }
 
 export async function listCourseMapsForUser(

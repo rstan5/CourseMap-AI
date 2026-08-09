@@ -145,6 +145,7 @@ function CourseGraphInner({
       connects_to: data.connects_to,
       likely_exam_relevance: data.likely_exam_relevance,
       estimated_mastery_hours: data.estimated_mastery_hours,
+      full_notes: data.full_notes ?? "",
     });
   }, []);
 

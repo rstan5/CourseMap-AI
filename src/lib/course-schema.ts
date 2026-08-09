@@ -30,6 +30,7 @@ export const conceptMapModuleSchema = z.object({
   likely_exam_relevance: z.enum(["high", "medium", "low"]),
   common_student_confusions: z.array(z.string()).optional().default([]),
   estimated_mastery_hours: z.number().optional().default(2),
+  full_notes: z.string().optional().default(""),
 });
 
 export const learningSequenceStepSchema = z.object({
@@ -62,7 +63,7 @@ export const knowledgeGapSchema = z.object({
 
 export const courseMapResponseSchema = z.object({
   course_map_overview: courseMapOverviewSchema,
-  concept_map: z.array(conceptMapModuleSchema).min(3).max(24),
+  concept_map: z.array(conceptMapModuleSchema).min(3).max(40),
   learning_graph_edges: z.array(learningGraphEdgeSchema).default([]),
   learning_sequence: z.array(learningSequenceStepSchema).default([]),
   high_yield_map: highYieldMapSchema.default({

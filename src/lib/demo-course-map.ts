@@ -3,6 +3,8 @@ import type { CourseMapData } from "@/types/course";
 /** Static sample shown on the landing page — not from the API */
 export const DEMO_COURSE_MAP: CourseMapData = {
   id: "demo",
+  sourceText:
+    "Week 1 notes: demand slopes down, supply slopes up, equilibrium is where they meet. Shortages raise price. Elasticity = %ΔQ / %ΔP. Consumer surplus is area under demand above price. Externalities = private ≠ social.",
   course_map_overview: {
     title: "Introduction to Economics",
     inferred_subject: "Economics",
@@ -51,6 +53,8 @@ export const DEMO_COURSE_MAP: CourseMapData = {
         "Mixing up movement along a curve vs a curve shift",
       ],
       estimated_mastery_hours: 4,
+      full_notes:
+        "Demand slopes down: higher price → less quantity demanded.\nSupply slopes up: higher price → more quantity supplied.\nEquilibrium is where Qd = Qs.\nDon't confuse a move along the curve with a shift of the curve.",
     },
     {
       id: "market-equilibrium",
@@ -81,6 +85,8 @@ export const DEMO_COURSE_MAP: CourseMapData = {
         "Confusing equilibrium quantity with maximum quantity demanded",
       ],
       estimated_mastery_hours: 3,
+      full_notes:
+        "Shortages push prices up; surpluses push prices down.\nA shift in supply or demand creates a new equilibrium price and quantity.",
     },
     {
       id: "elasticity",
@@ -111,6 +117,8 @@ export const DEMO_COURSE_MAP: CourseMapData = {
         "Treating elasticity as slope rather than percentage responsiveness",
       ],
       estimated_mastery_hours: 5,
+      full_notes:
+        "Elasticity = % change in quantity / % change in price.\nElastic: quantity changes a lot when price changes.\nInelastic: quantity barely moves.\nElasticity is not the same thing as the slope of the curve.",
     },
     {
       id: "consumer-surplus",
@@ -141,6 +149,8 @@ export const DEMO_COURSE_MAP: CourseMapData = {
         "Placing surplus areas on the wrong side of market price",
       ],
       estimated_mastery_hours: 3,
+      full_notes:
+        "Consumer surplus = area below demand and above price.\nProducer surplus = area above supply and below price.\nDeadweight loss = lost welfare from a distortion (tax, ceiling, etc.).",
     },
     {
       id: "market-failures",
@@ -171,6 +181,8 @@ export const DEMO_COURSE_MAP: CourseMapData = {
         "Assuming all government intervention always improves outcomes",
       ],
       estimated_mastery_hours: 4,
+      full_notes:
+        "Market failure: free markets don't allocate efficiently.\nExternalities: private costs/benefits differ from social.\nPublic goods: non-excludable and non-rival.\nIntervention can help, but not always.",
     },
   ],
   learning_graph_edges: [
